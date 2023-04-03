@@ -1,0 +1,98 @@
+-*- mode: Org; fill-column: 85; -*-
+
+#+begin_src python :results output
+
+import numpy as np
+import pandas as pd
+# from scipy.cluster.hierarchy import linkage, dendrogram
+# from scipy.spatial.distance import pdist
+from scipy.cluster.vq import whiten
+# from scipy.spatial.distance import squareform
+# from scipy.cluster.hierarchy import cophenet
+from sklearn import metrics
+from sklearn.cluster import KMeans
+
+def merics_for_clusters(labels_true, labels_pred):
+    return [metrics.rand_score(labels_true, labels_pred),
+     metrics.adjusted_rand_score(labels_true, labels_pred),
+     metrics.adjusted_mutual_info_score(labels_true, labels_pred),
+     metrics.fowlkes_mallows_score(labels_true, labels_pred),
+     metrics.homogeneity_score(labels_true, labels_pred),
+     metrics.completeness_score(labels_true, labels_pred)
+     ]
+
+# ------------ dataset -----------------------
+v1=list("0101010101010101") # 2
+v2=list("0202020202010101") # 3
+v3=list("0202020212121212") # 3
+df = pd.DataFrame({"v1":v1, "v2":v2, "v3":v3}).astype(int)
+
+# ----------- scale  -----------
+numbers_prepared = whiten( obs = df )
+# -------------
+
+X = df['v2'].to_numpy().reshape(-1,1)
+kmeans_model = KMeans(n_clusters=2, random_state=1).fit(X)
+labels = kmeans_model.labels_
+print("kmeans labels", labels)
+m = metrics.silhouette_score(X, labels, metric='euclidean')
+m2 = metrics.calinski_harabasz_score(X, labels)
+m3 = metrics.davies_bouldin_score(X, labels)
+print("silhouette_score for KMeans", m)
+print("calinski_harabasz_score for KMeans", m2)
+print("davies_bouldin_score for KMeans", m3)
+print()
+# ------ compare labels (may be used to compare clusterization methods)
+print("1 in true two big clusters")
+print("2 in difference many small clusters")
+print("3 in true one big cluster in failure")
+print("Note: 1, 2, 3 has same absolute error, but in 3 we lose one big cluster")
+print("  in 1 we did not get good in true predicted clusters")
+print()
+print("rand_score, djusted_rand_score, adjusted_mutual_info_score, fowlkes_mallows_score, homogeneity_score, completeness_score")
+
+labels_true = [0, 1, 0, 0, 0, 0, 1, 1]
+labels_pred = [0, 1, 0, 3, 4, 5, 5, 6]
+acc = sum([x==y for x, y in zip(labels_true, labels_pred)])
+errate = len(labels_true) - acc
+print("Accuracy:", acc/len(labels_true), "Error Rate:", errate/len(labels_true))
+print()
+
+v = np.zeros((3,6))
+v[0] = merics_for_clusters(labels_true, labels_pred)
+
+labels_true = [0, 1, 0, 2, 3, 4, 6, 5]
+labels_pred = [0, 1, 0, 3, 4, 5, 5, 6]
+v[1] = merics_for_clusters(labels_true, labels_pred)
+
+labels_true = [0, 1, 0, 2, 2, 2, 2, 2]
+labels_pred = [0, 1, 0, 3, 4, 5, 7, 6]
+v[2] = merics_for_clusters(labels_true, labels_pred)
+
+print(np.round(v,3))
+
+print("all metrics penalize most if big clusters not clustering")
+print("homogeneity_score
+#+end_src
+
+#+RESULTS:
+#+begin_example
+kmeans labels [1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
+silhouette_score for KMeans 0.7991071428571428
+calinski_harabasz_score for KMeans 78.86666666666666
+davies_bouldin_score for KMeans 0.28846153846153844
+
+1 in true two big clusters
+2 in difference many small clusters
+3 in true one big cluster in failure
+Note: 1, 2, 3 has same absolute error, but in 3 we lose one big cluster
+  in 1 we did not get good in true predicted clusters
+
+rand_score, djusted_rand_score, adjusted_mutual_info_score, fowlkes_mallows_score, homogeneity_score, completeness_score
+Accuracy: 0.375 Error Rate: 0.625
+
+[[0.536 0.011 0.017 0.196 0.738 0.282]
+ [0.964 0.65  0.65  0.707 0.909 1.   ]
+ [0.643 0.108 0.173 0.302 1.    0.472]]
+all metrics penalize most if big clusters not clustering
+#+end_example
