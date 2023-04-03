@@ -1,4 +1,4 @@
--*- mode: Org; fill-column: 85; -*-
+
 
 #+STARTUP: inlineimages
 :results file graphics :file 1.png

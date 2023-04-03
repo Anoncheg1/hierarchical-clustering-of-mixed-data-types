@@ -1,4 +1,4 @@
--*- mode: Org; fill-column: 85; -*-
+
 
 What metrics can tell about clusterization
 

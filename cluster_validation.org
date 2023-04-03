@@ -1,4 +1,4 @@
--*- mode: Org; fill-column: 85; -*-
+
 
 #+begin_src python :results output
 

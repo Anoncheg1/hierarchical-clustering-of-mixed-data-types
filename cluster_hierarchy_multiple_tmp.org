@@ -1,4 +1,4 @@
--*- mode: Org; fill-column: 85; -*-
+
 https://www.youtube.com/watch?v=Oeon9f-Xx78&list=PLYpF5d40XgQODkJztO4saO_k_1LTi2YMk&index=3
 
 #+STARTUP: inlineimages
