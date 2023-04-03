@@ -80,7 +80,7 @@ print("0 value - error for many clusters. ")
 
 #+end_src
 
-
+/results/:
 #+begin_example
 kmeans labels [1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
 silhouette_score for KMeans 1.0

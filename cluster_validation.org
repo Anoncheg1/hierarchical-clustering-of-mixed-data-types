@@ -75,7 +75,7 @@ print("all metrics penalize most if big clusters not clustering")
 print("homogeneity_score
 #+end_src
 
-
+/results/:
 #+begin_example
 kmeans labels [1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
 silhouette_score for KMeans 0.7991071428571428

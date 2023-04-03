@@ -33,7 +33,7 @@ C3 = np.triu(C2)
 print(C3)
 #+end_src
 
-
+/results/:
 #+begin_example
 [[0, 0], [0, 1], [1, 0], [0, 4], [0, 3], [1, 4], [4, 0], [3, 0], [4, 1], [4, 4], [3, 4], [4, 3]]
 Distances:

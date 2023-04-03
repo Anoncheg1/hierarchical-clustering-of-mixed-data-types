@@ -6,6 +6,6 @@ for filename in $(find ./sources/ -maxdepth 1 -type f \
 		       -not -name '.*.sh'); do
     echo "put ${filename}";
     newfn=$(basename $filename)
-    cat ${filename}  | sed 's/^#+RE.*//' > $newfn
+    cat ${filename}  | sed 's&^#+RESULTS:&/results/:&' > $newfn
     emacs "${newfn}" --eval "(progn (org-md-export-to-markdown) (save-buffers-kill-emacs))"
 done
