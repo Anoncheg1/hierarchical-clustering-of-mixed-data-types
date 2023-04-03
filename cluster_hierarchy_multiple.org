@@ -1,0 +1,210 @@
+-*- mode: Org; fill-column: 85; -*-
+https://www.youtube.com/watch?v=Oeon9f-Xx78&list=PLYpF5d40XgQODkJztO4saO_k_1LTi2YMk&index=3
+
+#+STARTUP: inlineimages
+: :results file graphics :file 1.png
+
+
+#+begin_src python :results output
+import numpy as np
+import pandas as pd
+from scipy.spatial.distance import pdist
+from scipy.cluster.vq import whiten
+from scipy.spatial.distance import squareform
+from scipy.cluster.hierarchy import linkage, dendrogram
+from scipy.cluster.hierarchy import cophenet
+from scipy.cluster.hierarchy import cut_tree
+# ------------ dataset -----------------------
+v1=list("0101010101010101") # 2
+v2=list("0202020202010101") # 3
+v3=list("0202020212121212") # 3
+df = pd.DataFrame({"v1":v1, "v2":v2, "v3":v3}).astype(int)
+
+# ----------- scale  -----------
+numbers_prepared = whiten( obs = df )
+
+# ----------- metric, method -------------------
+list_metric = ['braycurtis', 'canberra', 'chebyshev', 'cityblock',
+        'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+        'jaccard', 'jensenshannon', 'kulczynski1',
+        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
+        'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
+        'sqeuclidean', 'yule']
+
+list_method = [ 'single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward' ]
+
+# ---------- Calc all distances
+dict_pdist = {}
+for r in list_metric:
+    dict_pdist[r] = pdist(
+        X = numbers_prepared,
+        metric = r
+    )
+
+# ---------- Calc all linkages
+dict_linkage = {}
+for r in list_metric:
+    dict_linkage[r] = {}
+    for h in list_method:
+        d = np.where(np.isinf(dict_pdist[r]), 9999, dict_pdist[r])
+        d =np.where(np.isnan(d), 0, d)
+        dict_linkage[r][h] = linkage(
+            y = d,
+            method = h,
+            metric = r,
+            optimal_ordering = True
+        )
+
+# ---------- Calc cophentic correlation
+dict_cophenet = {}
+for metric in dict_linkage.keys():
+    for method in dict_linkage[metric].keys():
+        l = np.where(np.isinf(dict_linkage[metric][method]), 9999, dict_linkage[metric][method])
+        l =np.where(np.isnan(l), 0, l)
+        c = cophenet(
+            Z = l,
+            Y = dict_pdist[metric]
+        )[0]
+        dict_cophenet[metric + '_' + method] = {
+            'metric': metric,
+            'method': method,
+            'cophentic_correlation_distance': c
+        }
+
+df_cophenet: pd.DataFrame = pd.DataFrame(dict_cophenet).T
+df_cophenet = df_cophenet.sort_values( by = 'cophentic_correlation_distance' , ascending=False)
+# - filter metric=braycurtis, dice, correlation, jensenshannon, cosine, etc.
+df_cophenet = df_cophenet.dropna(subset = ['cophentic_correlation_distance'])
+print(df_cophenet.to_string())
+print()
+
+# --- dendrogram
+from matplotlib import pyplot as plt
+metric, method = 'hamming', 'average'
+v = dendrogram(Z=dict_linkage[metric][method], p=1.1, truncate_mode='level', labels=df.index, count_sort=False, distance_sort=False, orientation='right', leaf_font_size=15)
+plt.savefig('1.png')
+
+# --- get cluster labels at level
+metric, method = 'hamming', 'average'
+h = 0.6
+labels = cut_tree(
+    Z = dict_linkage[metric][method],
+    height=h
+)
+print("Cluster labels at:", h)
+print(labels.T)
+
+# --- compare two cluster labels
+
+
+#+end_src
+
+
+#+begin_example
+                                 metric    method cophentic_correlation_distance
+matching_single                matching    single                            1.0
+russellrao_weighted          russellrao  weighted                            1.0
+matching_weighted              matching  weighted                            1.0
+matching_average               matching   average                            1.0
+matching_complete              matching  complete                            1.0
+jaccard_weighted                jaccard  weighted                            1.0
+jaccard_average                 jaccard   average                            1.0
+jaccard_complete                jaccard  complete                            1.0
+jaccard_single                  jaccard    single                            1.0
+hamming_weighted                hamming  weighted                            1.0
+hamming_average                 hamming   average                            1.0
+hamming_single                  hamming    single                            1.0
+russellrao_single            russellrao    single                            1.0
+russellrao_complete          russellrao  complete                            1.0
+hamming_complete                hamming  complete                            1.0
+russellrao_average           russellrao   average                            1.0
+matching_centroid              matching  centroid                        0.99996
+hamming_centroid                hamming  centroid                        0.99996
+matching_median                matching    median                       0.999958
+hamming_median                  hamming    median                       0.999958
+mahalanobis_average         mahalanobis   average                       0.998909
+mahalanobis_weighted        mahalanobis  weighted                       0.998897
+mahalanobis_complete        mahalanobis  complete                       0.998665
+mahalanobis_single          mahalanobis    single                       0.998652
+russellrao_centroid          russellrao  centroid                       0.997243
+matching_ward                  matching      ward                        0.99626
+hamming_ward                    hamming      ward                        0.99626
+russellrao_median            russellrao    median                       0.993485
+mahalanobis_ward            mahalanobis      ward                       0.993196
+jaccard_centroid                jaccard  centroid                       0.993159
+chebyshev_average             chebyshev   average                       0.992569
+chebyshev_weighted            chebyshev  weighted                       0.992561
+chebyshev_complete            chebyshev  complete                       0.992191
+chebyshev_centroid            chebyshev  centroid                       0.991878
+chebyshev_median              chebyshev    median                       0.991637
+jaccard_median                  jaccard    median                       0.991403
+mahalanobis_median          mahalanobis    median                       0.991377
+jaccard_ward                    jaccard      ward                       0.990461
+mahalanobis_centroid        mahalanobis  centroid                       0.989964
+chebyshev_single              chebyshev    single                       0.989326
+sokalmichener_weighted    sokalmichener  weighted                       0.984358
+rogerstanimoto_weighted  rogerstanimoto  weighted                       0.984358
+rogerstanimoto_average   rogerstanimoto   average                       0.984358
+sokalmichener_average     sokalmichener   average                       0.984358
+rogerstanimoto_centroid  rogerstanimoto  centroid                       0.984259
+rogerstanimoto_median    rogerstanimoto    median                       0.984259
+sokalmichener_median      sokalmichener    median                       0.984259
+sokalmichener_centroid    sokalmichener  centroid                       0.984259
+rogerstanimoto_complete  rogerstanimoto  complete                        0.98351
+sokalmichener_complete    sokalmichener  complete                        0.98351
+chebyshev_ward                chebyshev      ward                       0.983506
+rogerstanimoto_single    rogerstanimoto    single                       0.983022
+sokalmichener_single      sokalmichener    single                       0.983022
+canberra_weighted              canberra  weighted                       0.979323
+canberra_average               canberra   average                       0.979323
+canberra_centroid              canberra  centroid                       0.979318
+canberra_median                canberra    median                       0.979318
+canberra_complete              canberra  complete                        0.97888
+canberra_single                canberra    single                       0.978555
+sokalmichener_ward        sokalmichener      ward                       0.978317
+rogerstanimoto_ward      rogerstanimoto      ward                       0.978317
+canberra_ward                  canberra      ward                       0.976517
+minkowski_average             minkowski   average                       0.974701
+euclidean_average             euclidean   average                       0.974701
+seuclidean_average           seuclidean   average                       0.974701
+seuclidean_centroid          seuclidean  centroid                       0.974674
+minkowski_centroid            minkowski  centroid                       0.974674
+euclidean_centroid            euclidean  centroid                       0.974674
+minkowski_weighted            minkowski  weighted                       0.974672
+euclidean_weighted            euclidean  weighted                       0.974672
+seuclidean_weighted          seuclidean  weighted                       0.974672
+minkowski_median              minkowski    median                       0.974577
+euclidean_median              euclidean    median                       0.974577
+seuclidean_median            seuclidean    median                       0.974577
+seuclidean_complete          seuclidean  complete                       0.973692
+euclidean_complete            euclidean  complete                       0.973692
+minkowski_complete            minkowski  complete                       0.973692
+cityblock_average             cityblock   average                       0.973348
+cityblock_centroid            cityblock  centroid                       0.973348
+cityblock_weighted            cityblock  weighted                       0.973338
+cityblock_median              cityblock    median                       0.973338
+cityblock_complete            cityblock  complete                       0.973003
+cityblock_ward                cityblock      ward                       0.972051
+cityblock_single              cityblock    single                        0.97189
+euclidean_ward                euclidean      ward                       0.970455
+seuclidean_ward              seuclidean      ward                       0.970455
+minkowski_ward                minkowski      ward                       0.970455
+minkowski_single              minkowski    single                       0.969794
+seuclidean_single            seuclidean    single                       0.969794
+euclidean_single              euclidean    single                       0.969794
+russellrao_ward              russellrao      ward                       0.958535
+sqeuclidean_average         sqeuclidean   average                       0.929728
+sqeuclidean_median          sqeuclidean    median                       0.929728
+sqeuclidean_centroid        sqeuclidean  centroid                       0.929725
+sqeuclidean_weighted        sqeuclidean  weighted                        0.92972
+sqeuclidean_complete        sqeuclidean  complete                       0.929492
+sqeuclidean_ward            sqeuclidean      ward                       0.929318
+sqeuclidean_single          sqeuclidean    single                       0.927633
+
+Cluster labels at: 0.6
+[[0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1]]
+#+end_example
+
+
+#+CAPTION: output image for source block above
+[[/home/u/proj_python/1.png]]
